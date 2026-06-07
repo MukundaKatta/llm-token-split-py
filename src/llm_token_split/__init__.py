@@ -11,10 +11,10 @@ class Chunk:
     """A single text chunk with position metadata."""
 
     text: str
-    index: int          # 0-based chunk index
-    char_start: int     # start offset in the original text
-    char_end: int       # end offset (exclusive)
-    is_last: bool       # True for the final chunk
+    index: int  # 0-based chunk index
+    char_start: int  # start offset in the original text
+    char_end: int  # end offset (exclusive)
+    is_last: bool  # True for the final chunk
 
 
 def split_by_chars(
@@ -58,13 +58,15 @@ def split_by_chars(
         raw = text[pos:end]
         content = raw.strip() if strip_chunks else raw
         is_last = end >= len(text)
-        chunks.append(Chunk(
-            text=content,
-            index=index,
-            char_start=pos,
-            char_end=end,
-            is_last=is_last,
-        ))
+        chunks.append(
+            Chunk(
+                text=content,
+                index=index,
+                char_start=pos,
+                char_end=end,
+                is_last=is_last,
+            )
+        )
         if is_last:
             break
         pos += step
@@ -97,8 +99,9 @@ def split_by_tokens(
     """
     chunk_size = max(1, int(chunk_tokens * chars_per_token))
     overlap = int(overlap_tokens * chars_per_token)
-    return split_by_chars(text, chunk_size=chunk_size, overlap=overlap,
-                          strip_chunks=strip_chunks)
+    return split_by_chars(
+        text, chunk_size=chunk_size, overlap=overlap, strip_chunks=strip_chunks
+    )
 
 
 def split_by_sentences(
@@ -123,7 +126,9 @@ def split_by_sentences(
         List of Chunk objects.
     """
     # Split into sentences
-    raw_sentences = [s.strip() + sentence_sep for s in text.split(sentence_sep) if s.strip()]
+    raw_sentences = [
+        s.strip() + sentence_sep for s in text.split(sentence_sep) if s.strip()
+    ]
     if not raw_sentences:
         return []
 
@@ -156,15 +161,23 @@ def split_by_sentences(
         start = char_pos
         end = start + len(chunk_text)
         is_last = j >= len(raw_sentences)
-        chunks.append(Chunk(
-            text=chunk_text,
-            index=index,
-            char_start=start,
-            char_end=end,
-            is_last=is_last,
-        ))
+        chunks.append(
+            Chunk(
+                text=chunk_text,
+                index=index,
+                char_start=start,
+                char_end=end,
+                is_last=is_last,
+            )
+        )
         char_pos = end + 1
         index += 1
+
+        if is_last:
+            # This chunk already covers the remaining sentences; emitting
+            # another (overlapping) chunk would duplicate content and produce
+            # a second chunk flagged is_last.
+            break
 
         # Advance with optional sentence overlap
         i = max(i + 1, j - overlap_sentences)
@@ -182,4 +195,10 @@ def iter_chunks(
         yield chunk.text
 
 
-__all__ = ["Chunk", "split_by_chars", "split_by_tokens", "split_by_sentences", "iter_chunks"]
+__all__ = [
+    "Chunk",
+    "split_by_chars",
+    "split_by_tokens",
+    "split_by_sentences",
+    "iter_chunks",
+]

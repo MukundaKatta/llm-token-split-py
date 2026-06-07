@@ -1,7 +1,12 @@
 """Tests for llm-token-split-py."""
+
 import pytest
 from llm_token_split import (
-    Chunk, split_by_chars, split_by_tokens, split_by_sentences, iter_chunks
+    Chunk,
+    split_by_chars,
+    split_by_tokens,
+    split_by_sentences,
+    iter_chunks,
 )
 
 TEXT = "Hello world this is a test of chunking text into smaller pieces."
@@ -103,7 +108,9 @@ def test_split_by_tokens_basic():
 
 def test_split_by_tokens_overlap():
     text = "a" * 120
-    chunks = split_by_tokens(text, chunk_tokens=10, overlap_tokens=2, chars_per_token=4.0)
+    chunks = split_by_tokens(
+        text, chunk_tokens=10, overlap_tokens=2, chars_per_token=4.0
+    )
     # chunk_size=40, overlap=8, step=32
     # should produce overlapping chunks
     assert len(chunks) >= 2
@@ -136,6 +143,27 @@ def test_split_by_sentences_last_is_last():
     text = "One. Two. Three."
     chunks = split_by_sentences(text, max_chunk_chars=200)
     assert chunks[-1].is_last is True
+
+
+def test_split_by_sentences_overlap_no_duplicate_last():
+    # With overlap, a chunk that already reaches the end must not spawn a
+    # redundant trailing chunk, and exactly one chunk must be flagged is_last.
+    text = "First. Second. Third. Fourth."
+    chunks = split_by_sentences(text, max_chunk_chars=15, overlap_sentences=1)
+    assert sum(c.is_last for c in chunks) == 1
+    assert chunks[-1].is_last is True
+    # No fully-duplicate trailing chunk that repeats only the final sentence.
+    assert chunks[-1].text == "Third. Fourth."
+
+
+def test_split_by_sentences_overlap_full_coverage():
+    # Every sentence should appear at least once across overlapping chunks.
+    text = "S1. S2. S3. S4. S5."
+    chunks = split_by_sentences(text, max_chunk_chars=12, overlap_sentences=1)
+    combined = " ".join(c.text for c in chunks)
+    for s in ["S1", "S2", "S3", "S4", "S5"]:
+        assert s in combined
+    assert sum(c.is_last for c in chunks) == 1
 
 
 def test_chunk_dataclass():
