@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterator
 
+__version__ = "0.1.0"
+
 
 @dataclass
 class Chunk:
@@ -201,4 +203,5 @@ __all__ = [
     "split_by_tokens",
     "split_by_sentences",
     "iter_chunks",
+    "__version__",
 ]
